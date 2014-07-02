@@ -8,7 +8,10 @@ You can see this project in action at *[published story link goes here]()*.
 
 ## Data
 
-*Describe the data sources here.  Use links and URLs to show where the data came from.  Put small sized originals or modified data sources in the ```data/original``` folder and ensure to update the `.gitignore` file*
+* Basic stop data
+* Stop boardings
+* Stop shelter amenities were recieved by MetroTransit via email.
+    * Included locally: `Shelter database.xlsx`
 
 ## Development and running locally
 
@@ -17,18 +20,19 @@ You can see this project in action at *[published story link goes here]()*.
 All commands are assumed to be on the [command line](http://en.wikipedia.org/wiki/Command-line_interface), often called the Terminal, unless otherwise noted.  The following will install technologies needed for the other steps and will only needed to be run once on your computer so there is a good chance you already have these technologies on your computer.
 
 1. Install [Git](http://git-scm.com/).
-   * On a Mac, install [Homebrew](http://brew.sh/), then do: `brew install git`
+    * On a Mac, install [Homebrew](http://brew.sh/), then do: `brew install git`
 1. Install [NodeJS](http://nodejs.org/).
-   * On a Mac, do: `brew install node`
+    * On a Mac, do: `brew install node`
 1. Optionally, for development, install [Grunt](http://gruntjs.com/): `npm install -g grunt-cli`
 1. Install [Bower](http://bower.io/): `npm install -g bower`
-
-
 1. Install [Sass](http://sass-lang.com/): `gem install sass`
-   * On a Mac do: `sudo gem install sass`
+    * On a Mac do: `sudo gem install sass`
 1. Install [Compass](http://compass-style.org/): `gem install compass`
-   * On a Mac do: `sudo gem install compass`
+    * On a Mac do: `sudo gem install compass`
 1. Because Leaflet comes unbuilt, we need to build it with Jake: `npm install -g jake`
+1. Install [csvkit](http://csvkit.readthedocs.org/en/0.7.3/#installation); do this globally as it is a command line tool that will useful in other places: `pip install csvkit`
+1. Install ogr2ogr; do this globally as it is a command line tool that will useful in other places.
+    * On a Mac do: `brew install gdal --complete --enable-unsupported --with-postgresql --with-python`
 
 ### Get code and install packages
 

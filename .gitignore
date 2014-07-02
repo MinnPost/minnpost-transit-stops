@@ -1,7 +1,7 @@
 # Data sources and builds (except for non-dowloadable sources)
-data/original
-data/build
-# !data/original/foia-data.csv
+data/original/*
+data/build/*
+!data/original/Shelter_database.xlsx
 
 # Unnecssary dist parts
 dist/data.js

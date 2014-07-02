@@ -16,11 +16,16 @@ script_tracts := $(processing)/some-data-processing-script.js
 
 # Sources
 source_stops := ftp://gisftp.metc.state.mn.us/TransitStops.zip
+source_boardings := ftp://gisftp.metc.state.mn.us/TransitStopsBoardingsAndAlightings.zip
 
 # Local sources
-local_stops := $(original)/transit-stops.zip
+local_stops_zip := $(original)/transit-stops.zip
 local_stops_dir := $(original)/transit-stops/
-local_stops_shp := $(original)/transit-stops/TransitStops.shp
+local_stops := $(original)/transit-stops/TransitStops.shp
+local_boardings_zip := $(original)/transit-boardings.zip
+local_boardings_dir := $(original)/transit-boardings/
+local_boardings := $(original)/transit-boardings/TransitStopsBoardingsAndAlightings.xlsx
+local_shelters := data/original/Shelter_database.xlsx
 
 # Converted
 build_stops := $(build)/stops.geo.json
@@ -34,16 +39,25 @@ stops := $(data)/stops.geo.json
 # up to date
 $(local_stops_shp):
 	mkdir -p $(original)
-	curl -o $(local_stops) "$(source_stops)"
-	unzip $(local_stops) -d $(local_stops_dir)
+	curl -o $(local_stops_zip) "$(source_stops)"
+	unzip $(local_stops_zip) -d $(local_stops_dir)
 	touch $(local_stops_shp)
 
-download: $(local_stops_shp)
+$(local_boardings):
+	mkdir -p $(original)
+	curl -o $(local_boardings_zip) "$(source_boardings)"
+	unzip $(local_boardings_zip) -d $(local_boardings_dir)
+	touch $(local_boardings)
+
+download: $(local_stops_shp) $(local_boardings_xls)
 clean_download:
-	rm -rv $(original)/*
+	rm -rv $(local_stops_dir) $(local_stops_zip)
+	rm -rv $(local_boardings_dir) $(local_boardings_zip)
 
 
 # Convert and filter data files
+$()
+
 $(example): $(local_example_shp)
 	mkdir -p $(build)
 	ogr2ogr -f "GeoJSON" $(build_example) $(local_example_shp) -overwrite -where "NAME = 'Southwest LRT'" -t_srs "EPSG:4326"
