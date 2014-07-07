@@ -22,7 +22,8 @@
     "text": "~2.0.12",
     "underscore": "~1.6.0",
     "jquery": "~1.11.0",
-    "minnpost-styles": "master"
+    "minnpost-styles": "master",
+    "topojson": "~1.6.14"
   },
   "dependencyMap": {
     "requirejs": {

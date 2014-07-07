@@ -13,6 +13,9 @@
     "email": "data@minnpost.com"
   },
   "dependencies": {
+    "lodash": "^2.4.1",
+    "geojson-utils": "^1.1.0",
+    "geojson-area": "^0.1.0"
   },
   "devDependencies": {
     "grunt": "~0.4.4",
