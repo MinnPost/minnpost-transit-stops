@@ -70,6 +70,19 @@ stops.features = _.map(stops.features, function(f, fi) {
   return f;
 });
 
+// Fix the fact that the shelter data does not have light rail stops.  There is
+// not very consistent data to determine that it is a light rail stop.
+stops.features = _.map(stops.features, function(f, fi) {
+  if (((f.properties.id >= 51405 && f.properties.id <= 51437)||
+    (f.properties.id >= 55994 && f.properties.id <= 56043)) &&
+    (f.properties.at.toLowerCase().indexOf('platform') === 0)) {
+    f.properties.heat = 'Yes';
+    f.properties.light = 'Yes';
+  }
+
+  return f;
+});
+
 
 // Aggregate into polygons
 mplsN.features = _.map(mplsN.features, function(f, fi) {

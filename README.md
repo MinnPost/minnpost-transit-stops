@@ -10,8 +10,9 @@ You can see this project in action at *[published story link goes here]()*.
 
 * Basic stop data
 * Stop boardings
-* Stop shelter amenities were recieved by MetroTransit via email.
-    * Included locally: `Shelter database.xlsx`
+* Stop shelter amenities were received by MetroTransit via email.
+    * Original included locally: `Shelter database.xlsx`
+    * For whatever reason, light rail stops are not included here, which all have lights and heat.
 
 ## Development and running locally
 
