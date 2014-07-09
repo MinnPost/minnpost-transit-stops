@@ -99,7 +99,7 @@ mplsN.features = _.map(mplsN.features, function(f, fi) {
     return (s.properties.light == 'Yes') ? memo + 1 : memo;
   }, 0);
   p.bench = _.reduce(p.stops, function(memo, s, si) {
-    return (s.properties.bench == 'Y') ? memo + 1 : memo;
+    return (s.properties.bench) ? memo + 1 : memo;
   }, 0);
   p.sign = _.reduce(p.stops, function(memo, s, si) {
     return (s.properties.sign == 'Y') ? memo + 1 : memo;
@@ -117,7 +117,7 @@ mplsN.features = _.map(mplsN.features, function(f, fi) {
     return (s.properties.offs) ? memo + s.properties.offs : memo;
   }, 0);
 
-  // Make overall stop score
+  // Make overall stop scores
   p.score = (
     (p.s_count * 0.25) +
     (p.sign * 1) +
@@ -125,6 +125,18 @@ mplsN.features = _.map(mplsN.features, function(f, fi) {
     (p.shelter * 2) +
     (p.light * 3) +
     (p.heat * 4)
+  );
+  p.score_no_count = (
+    (p.bench * 1) +
+    (p.shelter * 2) +
+    (p.light * 3) +
+    (p.heat * 4)
+  );
+  p.score_heavy = (
+    (p.bench * 1) +
+    (p.shelter * 5) +
+    (p.light * 10) +
+    (p.heat * 20)
   );
 
   // Remove stops from data
@@ -135,6 +147,7 @@ mplsN.features = _.map(mplsN.features, function(f, fi) {
   _.each(demographics, function(d, di) {
     if (d.column2 && d.column5 === 'Minneapolis' && translateNeighborhood(d.column2) === p.neighbor_1) {
       found = true;
+      p.community_area = d.column3;
       p.population = parseInt(d.column6, 10);
       p.employed = parseInt(d.column238, 10);
       p.employed_per = p.employed / p.population;
@@ -161,6 +174,11 @@ mplsN.features = _.map(mplsN.features, function(f, fi) {
   // Adjust for area
   p.score_by_area = p.score / p.area_km;
   p.score_by_pop_area = p.score / p.population / p.area_km;
+  p.score_no_count_by_pop_area = p.score_no_count / p.population / p.area_km;
+  p.score_heavy_by_pop_area = p.score_heavy / p.population / p.area_km;
+  p.shelter_by_pop_area = p.shelter / p.population / p.area_km;
+  p.light_by_pop_area = p.light / p.population / p.area_km;
+  p.heat_by_pop_area = p.heat / p.population / p.area_km;
 
   return f;
 });

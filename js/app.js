@@ -7,17 +7,14 @@
 
 // Create main application
 define('minnpost-transit-stops', [
-  'jquery', 'underscore', 'ractive', 'ractive-events-tap', 'leaflet', 'mpConfig', 'mpFormatters', 'mpMaps', 
-  'helpers',
-  
-  
-  'text!templates/application.mustache'
+  'jquery', 'underscore', 'ractive', 'ractive-events-tap', 'topojson', 'chroma',
+  'leaflet', 'simple-statistics', 'highcharts', 'mpConfig', 'mpFormatters',
+  'mpMaps', 'mpHighcharts',
+  'helpers', 'text!templates/application.mustache'
 ], function(
-  $, _, Ractive, RactiveEventsTap, L, mpConfig, mpFormatters, mpMaps, 
-  helpers,
-  
-  
-  tApplication
+  $, _, Ractive, RactiveEventsTap, topojson, chroma, L, ss, Highcharts,
+  mpConfig, mpFormatters, mpMaps, mpHighcharts,
+  helpers, tApplication
   ) {
 
   // Constructor for app
@@ -35,20 +32,27 @@ define('minnpost-transit-stops', [
     // Start function
     start: function() {
       var thisApp = this;
+      this.showProp = 'score_by_pop_area';
+      this.showProp2 = 'population';
 
-      
       // Create main application view
       this.mainView = new Ractive({
         el: this.$el,
         template: tApplication,
         data: {
+          showProp: this.showProp,
+          showProp2: this.showProp2
         },
         partials: {
         }
       });
-      
 
-      
+      // DOM events
+      this.mainView.observe('showProp', function(n, o) {
+        thisApp.showProp = n;
+        thisApp.changeProp();
+      });
+
       // Run examples.  Please remove for real application.
       //
       // Because of how Ractive initializes and how Highcharts work
@@ -60,55 +64,175 @@ define('minnpost-transit-stops', [
       // can be used with a Ractive observer.
       //
       // This should not happen with underscore templates.
-      _.delay(function() { thisApp.makeExamples(); }, 400);
-      
+      _.delay(function() { thisApp.getData(); }, 400);
+
     },
 
-    
-    // Make some example depending on what parts were asked for in the
-    // templating process.  Remove, rename, or alter this.
-    makeExamples: function() {
-      
+    // Get data
+    getData: function() {
+      var thisApp = this;
 
-      
+      $.getJSON('data/neighborhood-stop-data.topo.json', function(data) {
+        thisApp.nData = topojson.feature(data, data.objects['neighborhood-stop-data.geo']);
+        thisApp.mainView.set('properties', _.keys(thisApp.nData.features[0].properties));
+        thisApp.makeMap();
+      });
+    },
 
-      
-      var markerMap = mpMaps.makeLeafletMap('example-markers-features-map');
-      var tooltipControl = new mpMaps.TooltipControl();
-      markerMap.setZoom(9);
-      markerMap.addControl(tooltipControl);
+    // Make map
+    makeMap: function() {
+      var thisApp = this;
+      this.map = mpMaps.makeLeafletMap('prop-map');
+      this.tooltipControl = new mpMaps.TooltipControl();
+      this.map.addControl(this.tooltipControl);
 
-      // Markers
-      var iconCinema = mpMaps.makeMakiIcon('cinema', 'm');
-      var iconBlank = mpMaps.makeMakiIcon('', 's', '222222');
-      L.marker(mpMaps.minneapolisPoint, { icon: iconCinema })
-        .addTo(markerMap).bindPopup('Minneapolis', {
-          closeButton: false
-        });
-      L.marker(mpMaps.stPaulPoint, { icon: iconBlank })
-        .addTo(markerMap).bindPopup('St. Paul', {
-          closeButton: false
-        });
-
-      // GeoJSON example
-      $.getJSON('http://boundaries.minnpost.com/1.0/boundary/27-county-2010/?callback=?', function(data) {
-        if (data.simple_shape) {
-          L.geoJson(data.simple_shape, {
-            style: mpMaps.mapStyle,
-            onEachFeature: function(feature, layer) {
-              layer.on('mouseover', function(e) {
-                tooltipControl.update('Hennepin County');
-              });
-              layer.on('mouseout', function(e) {
-                tooltipControl.hide();
-              });
-            }
-          }).addTo(markerMap);
+      // Add neighborhoods to map
+      this.nLayers = L.geoJson(this.nData, {
+        style: mpMaps.mapStyle,
+        onEachFeature: function(feature, layer) {
+          layer.on('mouseover', function(e) {
+            thisApp.tooltipControl.update(feature.properties.Name + '<br>' + thisApp.showProp + ': ' + feature.properties[thisApp.showProp]);
+          });
+          layer.on('mouseout', function(e) {
+            thisApp.tooltipControl.hide();
+          });
         }
       });
-      
+      this.nLayers.addTo(thisApp.map);
+
+      this.map.fitBounds(thisApp.nLayers.getBounds());
+      this.changeProp();
     },
-    
+
+    // Change property to look at
+    changeProp: function() {
+      var thisApp = this;
+      var valuesDist, i, j;
+
+      // Stats
+      var values = _.sortBy(_.map(this.nData.features, function(f, fi) {
+        return f.properties[thisApp.showProp];
+      }));
+      var mean = ss.mean(values);
+      var stdDev = ss.standard_deviation(values);
+      var binCount = Math.ceil(Math.sqrt(values.length)) * 5;
+
+      // Color
+      var scale = chroma.scale('Blues').domain([0, 1, 2, 3], 7, 'e');
+
+      // Update map
+      this.nLayers.setStyle(function(feature, layer) {
+        return {
+          color: scale(Math.abs((feature.properties[thisApp.showProp] - mean) / stdDev)),
+          fillColor: scale(Math.abs((feature.properties[thisApp.showProp] - mean) / stdDev)),
+          fillOpacity: 0.8
+        };
+      });
+
+      // Make values chart
+      valuesDist = _.sortBy(_.map(this.nData.features, function(f, fi) {
+        return [f.properties.Name, f.properties[thisApp.showProp]];
+      }), function(v, vi) {
+        return v[1];
+      });
+      mpHighcharts.makeChart('#prop-values', $.extend(true, {}, mpHighcharts.columnOptions, {
+        legend: { enabled: false },
+        xAxis: {
+          type: 'category',
+          labels: { rotation: -45 }
+        },
+        series: [{
+          name: this.showProp,
+          data: valuesDist
+        }]
+      }));
+
+      // Make distribution chart
+      var bins = [];
+      var span = values[values.length - 1] - values[0];
+      var binSpan = (span / binCount);
+      var b;
+      for (i = 0; i < values[values.length - 1]; i += binSpan) {
+        b = 0;
+
+        for (j = 0; j < values.length - 1; j++) {
+          if (values[j] >= i && values[j] < i + binSpan) {
+            b++;
+          }
+        }
+
+        bins.push([i + ' - ' + (i + binSpan), b]);
+      }
+
+      mpHighcharts.makeChart('#prop-distribution', $.extend(true, {}, mpHighcharts.columnOptions, {
+        legend: { enabled: false },
+        xAxis: {
+          type: 'category',
+          labels: { rotation: -45 }
+        },
+        series: [{
+          name: this.showProp,
+          data: bins
+        }]
+      }));
+
+
+      // Stuff
+      var features = _.filter(_.sortBy(this.nData.features, function(f, fi) {
+        return f.properties[thisApp.showProp];
+      }), function(f, fi) {
+        return (_.isNumber(f.properties[thisApp.showProp]) &&
+          ['Mid - City Industrial', 'Humboldt Industrial Area', 'Camden Industrial'].indexOf(f.properties.Name) === -1);
+      });
+      values = _.map(features, function(f, fi) {
+        return f.properties[thisApp.showProp];
+      });
+      var northValues = _.map(_.filter(features, function(f, fi) {
+        return (['Near North', 'Camden'].indexOf(f.properties.community_area) !== -1);
+      }), function(f, fi) {
+        return f.properties[thisApp.showProp];
+      });
+      var nonNorthValues = _.map(_.filter(features, function(f, fi) {
+        return (['Near North', 'Camden'].indexOf(f.properties.community_area) === -1);
+      }), function(f, fi) {
+        return f.properties[thisApp.showProp];
+      });
+
+      console.log(northValues);
+      console.log('All Mean: ' + ss.mean(values));
+      console.log('All Median: ' + ss.mean(values));
+      console.log('All Std Dev: ' + ss.standard_deviation(values));
+      console.log('North Mean: ' + ss.mean(northValues));
+      console.log('North Median: ' + ss.mean(northValues));
+      console.log('North Std Dev: ' + ss.standard_deviation(northValues));
+      console.log('T Test of North to all mean: ' + ss.t_test(northValues, ss.mean(values)));
+      console.log('T Test of North and non-North: ' + ss.t_test_two_sample(northValues, nonNorthValues, 0));
+      console.log('T Test of North and all: ' + ss.t_test_two_sample(northValues, values, 0));
+
+      console.log('Manual T of North to all mean: ' + (
+        (ss.mean(northValues) - ss.mean(values)) /
+        (ss.standard_deviation(northValues) / Math.sqrt(northValues.length))
+      ));
+
+      console.log('Sig Stat of North to all mean: ' + (
+        (ss.mean(northValues) - ss.mean(values)) /
+        (ss.standard_deviation(northValues))
+      ));
+
+
+      console.log('T Test of all to North mean: ' + ss.t_test(values, ss.mean(northValues)));
+
+      console.log('Manual T Test: ' + (
+        (ss.mean(northValues) - ss.mean(values)) /
+        (Math.sqrt(
+          (ss.variance(northValues) / northValues.length) +
+          (ss.variance(values) / values.length)
+        ))
+      ));
+      console.log('Degrees of freedom for all and North: ' + (northValues.length + values.length - 2));
+
+    },
+
 
     // Default options
     defaultOptions: {
@@ -117,7 +241,7 @@ define('minnpost-transit-stops', [
       el: '.minnpost-transit-stops-container',
       availablePaths: {
         local: {
-          
+
           css: ['.tmp/css/main.css'],
           images: 'images/',
           data: 'data/'

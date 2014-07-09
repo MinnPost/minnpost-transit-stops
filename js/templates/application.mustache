@@ -5,30 +5,41 @@
 
     <h3>Minnpost Transit Stops</h3>
 
-    <div class="loading-block"></div>
+    <div>
+      <select value="{{ showProp }}">
+        {{#properties}}
+          <option value="{{ . }}">{{ . }}</option>
+        {{/properties}}
+      </select>
 
-    <p>Welcome to your new MinnPost application, built from the MinnPost Templating system.  Make sure to use the <a href="http://code.minnpost.com/minnpost-styles/">MinnPost Style Guide</a> for all your styling needs.</p>
+      <select value="{{ showProp2 }}">
+        {{#properties}}
+          <option value="{{ . }}">{{ . }}</option>
+        {{/properties}}
+      </select>
+    </div>
 
-    
-    
+    <div class="component-label">Map of first property</div>
+    <div class="caption">Colored by standard deviations (+- 0-3).</div>
+    <div class="map" id="prop-map"></div>
 
-    
-    <div class="component-label">Map example</div>
-    <div class="caption">Here is an awesome, concise caption.</div>
-    <div class="map" id="example-markers-features-map"></div>
-    
+    <div class="component-label">Values of first property</div>
+    <div class="chart" id="prop-values"></div>
 
-    
-    
+    <div class="component-label">Distribution of first property</div>
+    <div class="chart" id="prop-distribution"></div>
+
+    <div class="component-label">Scaterplot of property 1 vs property 2</div>
+    <div class="chart" id="prop-scatterplot"></div>
 
   </div>
 
   <div class="footnote-container">
     <div class="footnote">
       <p>Some code, techniques, and data on <a href="https://github.com/minnpost/minnpost-transit-stops" target="_blank">Github</a>.</p>
-      
+
         <p>Some map data © OpenStreetMap contributors; licensed under the <a href="http://www.openstreetmap.org/copyright" target="_blank">Open Data Commons Open Database License</a>.  Some map design © MapBox; licensed according to the <a href="http://mapbox.com/tos/" target="_blank">MapBox Terms of Service</a>.  Location geocoding provided by <a href="http://www.mapquest.com/" target="_blank">Mapquest</a> and is not guaranteed to be accurate.</p>
-      
+
     </div>
   </div>
 </div>
