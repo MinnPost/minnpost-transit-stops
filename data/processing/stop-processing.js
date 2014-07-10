@@ -7,13 +7,15 @@ var path = require('path');
 var _ = require('lodash');
 var gu = require('geojson-utils');
 var ga = require('geojson-area');
+var csv = require('fast-csv');
 
 var stops = require('../build/stops.geo.json')
 var boardings = require('../build/boardings.json')
 var mplsN = require('../build/minneapolis-neighborhoods.geo.json')
 var demographics = require('../build/neighborhood-demographics.json');
 
-var output = path.resolve(__dirname, '../build/neighborhood-stop-data.geo.json');
+var outputGeo = path.resolve(__dirname, '../build/neighborhood-stop-data.geo.json');
+var outputCsv = path.resolve(__dirname, '../neighborhood-stop-data.csv');
 
 // Translation of demographic neighborhood name to our neighborhood id
 function translateNeighborhood(name) {
@@ -207,12 +209,20 @@ _.each(mplsN.features, function(f, fi) {
 });
 */
 
-// Save output
-fs.writeFile(output, JSON.stringify(mplsN), function(err) {
+// Save output to geojson
+fs.writeFile(outputGeo, JSON.stringify(mplsN), function(err) {
   if (err) {
     console.log('Issue writing file: ' + err);
   }
   else {
-    console.log('GeoJSON file saved to: ' + output);
+    console.log('GeoJSON file saved to: ' + outputGeo);
   }
 });
+
+// Save output to CSV
+csv.writeToPath(outputCsv, _.map(mplsN.features, function(f, fi) {
+  return f.properties;
+}), {headers: true})
+  .on('finish', function() {
+    console.log('CSV file saved to: ' + outputCsv);
+  });
