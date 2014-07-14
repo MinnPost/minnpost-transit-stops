@@ -47,6 +47,14 @@ console.log('Combining stop data into neighborhoods...');
 // Group boardings for easier lookup
 boardings = _.groupBy(boardings, 'Site_id');
 
+// Get community areas into a sorted array, since SPSS wants categories
+// as numbers
+var community_areas = _.sortBy(_.uniq(_.filter(_.map(demographics, function(d, di) {
+  return d.column3;
+}), function(d, di) {
+  return ([null, '', false, 'X', 'Community (Minneapolis geographies only)'].indexOf(d) === -1);
+})));
+
 // Combine boarding data to stop data
 stops.features = _.map(stops.features, function(f, fi) {
   var id = f.properties.id;
@@ -84,7 +92,6 @@ stops.features = _.map(stops.features, function(f, fi) {
 
   return f;
 });
-
 
 // Aggregate into polygons
 mplsN.features = _.map(mplsN.features, function(f, fi) {
@@ -136,22 +143,22 @@ mplsN.features = _.map(mplsN.features, function(f, fi) {
   p.score = (
     (p.s_count * 0.25) +
     (p.sign * 1) +
-    (p.bench * 1) +
-    (p.shelter * 2) +
+    (p.bench * 2) +
     (p.light * 3) +
-    (p.heat * 4)
+    (p.heat * 4) +
+    (p.shelter * 5)
   );
   p.score_no_count = (
-    (p.bench * 1) +
-    (p.shelter * 2) +
+    (p.bench * 2) +
     (p.light * 3) +
-    (p.heat * 4)
+    (p.heat * 4) +
+    (p.shelter * 5)
   );
   p.score_heavy = (
-    (p.bench * 1) +
-    (p.shelter * 5) +
+    (p.bench * 5) +
     (p.light * 10) +
-    (p.heat * 20)
+    (p.heat * 20) +
+    (p.shelter * 50)
   );
 
   // Remove stops from data
@@ -163,6 +170,7 @@ mplsN.features = _.map(mplsN.features, function(f, fi) {
     if (d.column2 && d.column5 === 'Minneapolis' && translateNeighborhood(d.column2) === p.neighbor_1) {
       found = true;
       p.community_area = d.column3;
+      p.community_area_index = community_areas.indexOf(d.column3);
       p.population = parseInt(d.column6, 10);
       p.employed = parseInt(d.column238, 10);
       p.employed_per = p.employed / p.population;
@@ -180,6 +188,9 @@ mplsN.features = _.map(mplsN.features, function(f, fi) {
   p.score_by_emp = p.score / p.employed;
   p.score_by_jobs = p.score / p.jobs;
 
+  p.score_no_count_by_pop = p.score_no_count / p.population;
+  p.score_heavy_by_pop = p.score_heavy / p.population;
+
   // Adjust for ridership
   p.score_by_trips = p.score / p.trips;
   p.score_by_ons = p.score / p.ons;
@@ -191,6 +202,7 @@ mplsN.features = _.map(mplsN.features, function(f, fi) {
   p.score_by_pop_area = p.score / p.population / p.area_km;
   p.score_no_count_by_pop_area = p.score_no_count / p.population / p.area_km;
   p.score_heavy_by_pop_area = p.score_heavy / p.population / p.area_km;
+
   p.shelter_by_pop_area = p.shelter / p.population / p.area_km;
   p.light_by_pop_area = p.light / p.population / p.area_km;
   p.heat_by_pop_area = p.heat / p.population / p.area_km;
@@ -198,16 +210,26 @@ mplsN.features = _.map(mplsN.features, function(f, fi) {
   return f;
 });
 
-// Just some test output
-/*
-var testProp = 'score_by_area';
-mplsN.features = _.sortBy(mplsN.features, function(f, fi) {
-  return f.properties[testProp];
+// Let's group the northern neighborhoods
+mplsN.features = _.map(mplsN.features, function(f, fi) {
+  f.properties.north = 0;
+  if (['Near North', 'Camden'].indexOf(f.properties.community_area) !== -1) {
+    f.properties.north = 1;
+  }
+
+  return f;
 });
-_.each(mplsN.features, function(f, fi) {
-  console.log(f.properties.Name + ': '  + f.properties[testProp]);
+
+// Let's mark outliers
+mplsN.features = _.map(mplsN.features, function(f, fi) {
+  f.properties.outlier = 0;
+  if (['Mid - City Industrial', 'Humboldt Industrial Area', 'Camden Industrial', 'Downtown West', 'Downtown East'].indexOf(f.properties.Name) !== -1) {
+    f.properties.outlier = 1;
+  }
+
+  return f;
 });
-*/
+
 
 // Save output to geojson
 fs.writeFile(outputGeo, JSON.stringify(mplsN), function(err) {
@@ -219,10 +241,19 @@ fs.writeFile(outputGeo, JSON.stringify(mplsN), function(err) {
   }
 });
 
-// Save output to CSV
+// Save output to CSV.  For CSV output, we want to take out the outliers since
+// it is easier to work with in SPSS/PSPP
+mplsN.features = _.filter(mplsN.features, function(f, fi) {
+  return (f.properties.outlier !== 1);
+});
 csv.writeToPath(outputCsv, _.map(mplsN.features, function(f, fi) {
+  // For some awesome reasons, SPSS can't handle big floats
+  _.each(f.properties, function(p, pi) {
+    f.properties[pi] = _.isNumber(f.properties[pi]) ? f.properties[pi].toFixed(6) : f.properties[pi];
+  });
+
   return f.properties;
-}), {headers: true})
+}), { headers: true })
   .on('finish', function() {
     console.log('CSV file saved to: ' + outputCsv);
   });

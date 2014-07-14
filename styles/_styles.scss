@@ -18,9 +18,12 @@ body .node-unpublished {
     padding-top: 1em;
   }
 
+  .row {
+    margin-bottom: 5em;
+  }
 
-  #prop-map {
-    height: 40em;
+  .map {
+    height: 30em;
   }
 
   // Custom breakpoints

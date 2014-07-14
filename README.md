@@ -8,11 +8,12 @@ You can see this project in action at *[published story link goes here]()*.
 
 ## Data
 
-* Basic stop data
-* Stop boardings
+* Stop locations from MetroTransit via the [MetroGIS DataFinder](http://www.datafinder.org/metadata/TransitStops.html).
+* Stop boardings and alightings data from MetroTransit via the [MetroGIS DataFinder](http://www.datafinder.org/metadata/TransitStopsBoardingsAndAlightings.html).
 * Stop shelter amenities were received by MetroTransit via email.
     * Original included locally: `Shelter database.xlsx`
     * For whatever reason, light rail stops are not included here, which all have lights and heat.
+* Neighborhood demographic data from the [MN Compass Minneapolis-St. Paul Neighborhood Profiles](http://www.mncompass.org/twincities/neighborhoods) which is an aggregation of data such as the 2010 Census and American Community Survey data.
 
 ## Development and running locally
 

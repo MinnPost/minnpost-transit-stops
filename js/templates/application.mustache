@@ -3,34 +3,75 @@
 
   <div class="content-container">
 
-    <h3>Minnpost Transit Stops</h3>
+    <div class="row">
+      <div class="column-medium-50">
+        <p>Recently, there has been talk about transit stop quality in Minneapolis, specifically how the Northern neighborhoods might have less amenities than other neighborhoods.  So, how do we determine or quanitify stop quality across the city?</p>
 
-    <div>
-      <select value="{{ showProp }}">
-        {{#properties}}
-          <option value="{{ . }}">{{ . }}</option>
-        {{/properties}}
-      </select>
+        <p>First we need some data.  Fortunately, there is a lot of public, online data for us to start with.  We first grabbed basic stop data for all MetroTransit stops; this included data such as location and some basic amenities like benches and shelters.  MetroTransit also provides boarding data for a number of the stops online.  We had to make a specific request to MetroTransit for data on shelter amentities such as heating and lighting.  And finally, we were able to get recent demographic data for Minneapolis neighborhoods from MN Compass.</p>
+      </div>
+      <div class="column-medium-50">
 
-      <select value="{{ showProp2 }}">
-        {{#properties}}
-          <option value="{{ . }}">{{ . }}</option>
-        {{/properties}}
-      </select>
+      </div>
     </div>
 
-    <div class="component-label">Map of first property</div>
-    <div class="caption">Colored by standard deviations (+- 0-3).</div>
-    <div class="map" id="prop-map"></div>
+    <div class="row">
+      <div class="column-medium-50">
+        <p>There are 87 neighborhoods in Minneapolis.  So, which ones are we talking about when we say North Minneapolis?  Well, the answer can change on who you are talking to, but we are defining them as the Minneapolis Community Areas known as Camden and Near North.</p>
+      </div>
+      <div class="column-medium-50">
+        <div class="map" id="map-neighborhoods-north"></div>
+      </div>
+    </div>
 
-    <div class="component-label">Values of first property</div>
-    <div class="chart" id="prop-values"></div>
 
-    <div class="component-label">Distribution of first property</div>
-    <div class="chart" id="prop-distribution"></div>
+    <div class="row">
+      <div class="column-medium-50">
+        <p>Now that we have intendified our comparison area, we want to make start to make sure that are comparisons are on equal grounds.  First we remove two groups of neighborhoods.  The industrial neighborhoods that have none or very low populations.</p>
+        <p>The second is a bit more subjective.  The layout of the transit system is a hub-spoke layout, meaning that most of the routes end up terminating or going through the hub, which is Downtown in the instance.  So, we remove these as they will end up skewing any comparison we do.</p>
+      </div>
+      <div class="column-medium-50">
+        <div class="map" id="map-neighborhoods-outliers"></div>
+      </div>
+    </div>
 
-    <div class="component-label">Scaterplot of property 1 vs property 2</div>
-    <div class="chart" id="prop-scatterplot"></div>
+
+    <div class="row">
+      <div class="column-medium-50">
+        <p>Next we can start to look at stop quality.  If we look at just the number of shelters per neighborhood, there is an pretty obvious visual pattern that shows more shelters in the South/West of the city.</p>
+      </div>
+      <div class="column-medium-50">
+        <div class="map" id="map-shelters"></div>
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="column-medium-50">
+        <p>But we want to consider other amenities such as heating, lighting, benches, and signs.  So, let's create a stop score based on these factors.  Of course, this is fairly subjective, and we will explore what it means to change the scoring below.</p>
+
+        <p>
+          Has a shelter: 5 points <br />
+          Has a heater: 4 points <br />
+          Has lighting: 3 points <br />
+          Has a bench: 2 points <br />
+          Has a sign: 1 points
+        </p>
+      </div>
+      <div class="column-medium-50">
+        <div class="map" id="map-scores"></div>
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="column-medium-50">
+        <p>We now have a decent measure of stop quality, but we still haven't taken into account that each neighborhood is unique.  Each neighborhood is unique in many ways, but  we need to at the very least adjust for population.  This means we want to look at stop quality per capita for each neightborhood.  Once we do this, it becomes much harder to tell visually if there are specific areas of the city that do or do not have a significant stop qaulity difference.</p>
+      </div>
+      <div class="column-medium-50">
+        <div class="map" id="map-score-per-capita"></div>
+      </div>
+    </div>
+
 
   </div>
 

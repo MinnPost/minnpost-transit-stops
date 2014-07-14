@@ -10,11 +10,12 @@ define('minnpost-transit-stops', [
   'jquery', 'underscore', 'ractive', 'ractive-events-tap', 'topojson', 'chroma',
   'leaflet', 'simple-statistics', 'highcharts', 'mpConfig', 'mpFormatters',
   'mpMaps', 'mpHighcharts',
-  'helpers', 'text!templates/application.mustache'
+  'helpers', 'text!templates/application.mustache',
+  'text!templates/map-tooltip.underscore'
 ], function(
   $, _, Ractive, RactiveEventsTap, topojson, chroma, L, ss, Highcharts,
   mpConfig, mpFormatters, mpMaps, mpHighcharts,
-  helpers, tApplication
+  helpers, tApplication, tMapTooltip
   ) {
 
   // Constructor for app
@@ -32,39 +33,28 @@ define('minnpost-transit-stops', [
     // Start function
     start: function() {
       var thisApp = this;
-      this.showProp = 'score_by_pop_area';
-      this.showProp2 = 'population';
+      this.mapTooltipView = _.template(tMapTooltip);
 
       // Create main application view
       this.mainView = new Ractive({
         el: this.$el,
         template: tApplication,
         data: {
-          showProp: this.showProp,
-          showProp2: this.showProp2
+          originalShelterWeight: 5,
+          originalHeatWeight: 4,
+          originalLightWeight: 3,
+          originalBenchWeight: 2,
+          originalSignWeight: 1,
+          shelterWeight: 5,
+          heatWeight: 4,
+          lightWeight: 3,
+          benchWeight: 2,
+          signWeight: 1
         },
         partials: {
         }
       });
-
-      // DOM events
-      this.mainView.observe('showProp', function(n, o) {
-        thisApp.showProp = n;
-        thisApp.changeProp();
-      });
-
-      // Run examples.  Please remove for real application.
-      //
-      // Because of how Ractive initializes and how Highcharts work
-      // there is an inconsitency of when the container for the chart
-      // is ready and when highcharts loads the chart.  So, we put a bit of
-      // of a pause.
-      //
-      // In production, intializing a chart should be tied to data which
-      // can be used with a Ractive observer.
-      //
-      // This should not happen with underscore templates.
-      _.delay(function() { thisApp.getData(); }, 400);
+      _.delay(function() { thisApp.getData(); }, 800);
 
     },
 
@@ -73,165 +63,230 @@ define('minnpost-transit-stops', [
       var thisApp = this;
 
       $.getJSON('data/neighborhood-stop-data.topo.json', function(data) {
-        thisApp.nData = topojson.feature(data, data.objects['neighborhood-stop-data.geo']);
-        thisApp.mainView.set('properties', _.keys(thisApp.nData.features[0].properties));
-        thisApp.makeMap();
+        thisApp.nDataOutliers = topojson.feature(data, data.objects['neighborhood-stop-data.geo']);
+        thisApp.nData = _.clone(thisApp.nDataOutliers);
+        thisApp.nData.features = _.filter(thisApp.nData.features, function(f, fi) {
+          return (f.properties.outlier !== 1);
+        });
+        thisApp.nNorth = topojson.merge(data,
+          _.filter(data.objects['neighborhood-stop-data.geo'].geometries, function(o, oi) {
+          return (o.properties.north);
+        }));
+        thisApp.makeStats();
+        thisApp.makeMaps();
+      });
+    },
+
+    // Make stats
+    makeStats: function() {
+      var thisApp = this;
+
+      this.mainView.set('countShelter', _.reduce(this.nData.features, function(m, f, fi) {
+        return m + f.properties.shelter;
+      }, 0));
+      this.mainView.set('countLight', _.reduce(this.nData.features, function(m, f, fi) {
+        return m + f.properties.light;
+      }, 0));
+      this.mainView.set('countHeat', _.reduce(this.nData.features, function(m, f, fi) {
+        return m + f.properties.heat;
+      }, 0));
+      this.mainView.set('countBench', _.reduce(this.nData.features, function(m, f, fi) {
+        return m + f.properties.bench;
+      }, 0));
+      this.mainView.set('countSign', _.reduce(this.nData.features, function(m, f, fi) {
+        return m + f.properties.sign;
+      }, 0));
+
+      // Make score
+      this.nData.features = _.map(this.nData.features, function(f, fi) {
+        f.properties.originalScore = (
+          (f.properties.sign * thisApp.mainView.get('originalSignWeight')) +
+          (f.properties.bench * thisApp.mainView.get('originalBenchWeight')) +
+          (f.properties.light * thisApp.mainView.get('originalLightWeight')) +
+          (f.properties.heat * thisApp.mainView.get('originalHeatWeight')) +
+          (f.properties.shelter * thisApp.mainView.get('originalShelterWeight'))
+        );
+        return f;
       });
     },
 
     // Make map
-    makeMap: function() {
+    makeMaps: function() {
       var thisApp = this;
-      this.map = mpMaps.makeLeafletMap('prop-map');
-      this.tooltipControl = new mpMaps.TooltipControl();
-      this.map.addControl(this.tooltipControl);
+      this.maps = {};
 
-      // Add neighborhoods to map
-      this.nLayers = L.geoJson(this.nData, {
-        style: mpMaps.mapStyle,
-        onEachFeature: function(feature, layer) {
-          layer.on('mouseover', function(e) {
-            thisApp.tooltipControl.update(feature.properties.Name + '<br>' + thisApp.showProp + ': ' + feature.properties[thisApp.showProp]);
+      // Neighborhood north map
+      this.maps.nNorth = this.makeNeighborhoodMap(
+        'map-neighborhoods-north', true, true,
+        function(f, layer) {
+          return _.extend({}, mpMaps.mapStyle, {
+            fillOpacity: (!f.properties.north) ? 0 : 0.9
           });
-          layer.on('mouseout', function(e) {
-            thisApp.tooltipControl.hide();
+        },
+        function(f, layer, e) {
+          return thisApp.mapTooltipView({
+            name: f.properties.Name,
+            label: 'Community area',
+            value: f.properties.community_area
           });
         }
-      });
-      this.nLayers.addTo(thisApp.map);
+      );
 
-      this.map.fitBounds(thisApp.nLayers.getBounds());
-      this.changeProp();
+      // Neighborhood outliers map
+      this.maps.nOutlier = this.makeNeighborhoodMap(
+        'map-neighborhoods-outliers', true, false,
+        function(f, layer) {
+          return _.extend({}, mpMaps.mapStyle, {
+            fillOpacity: (!f.properties.outlier) ? 0 : 0.9
+          });
+        },
+        function(f, layer, e) {
+          return thisApp.mapTooltipView({
+            name: f.properties.Name
+          });
+        }
+      );
+
+      // Shelters map
+      this.maps.shelters = {};
+      this.maps.shelters.scale = this.makeColorScale('shelter');
+      _.extend(this.maps.shelters, this.makeNeighborhoodMap(
+        'map-shelters', false, true,
+        function(f, layer) {
+          return _.extend({}, mpMaps.mapStyle, {
+            fillOpacity: 0.75,
+            fillColor: thisApp.maps.shelters.scale(f.properties.shelter)
+          });
+        },
+        function(f, layer, e) {
+          return thisApp.mapTooltipView({
+            name: f.properties.Name,
+            label: 'Shelters',
+            value: f.properties.shelter
+          });
+        }
+      ));
+
+      // Score map
+      this.maps.scores = {};
+      this.maps.scores.scale = this.makeColorScale('originalScore');
+      _.extend(this.maps.scores, this.makeNeighborhoodMap(
+        'map-scores', false, true,
+        function(f, layer) {
+          return _.extend({}, mpMaps.mapStyle, {
+            fillOpacity: 0.75,
+            fillColor: thisApp.maps.scores.scale(f.properties.originalScore)
+          });
+        },
+        function(f, layer, e) {
+          return thisApp.mapTooltipView({
+            name: f.properties.Name,
+            label: 'Score',
+            value: mpFormatters.number(f.properties.originalScore, 0)
+          });
+        }
+      ));
+
+      // Score per population map
+      this.maps.scorePerPop = {};
+      this.maps.scorePerPop.scale = this.makeColorScale(function(f) {
+        return f.properties.originalScore / f.properties.population;
+      });
+      _.extend(this.maps.scorePerPop, this.makeNeighborhoodMap(
+        'map-score-per-capita', false, true,
+        function(f, layer) {
+          return _.extend({}, mpMaps.mapStyle, {
+            fillOpacity: 0.75,
+            fillColor: thisApp.maps.scorePerPop.scale(f.properties.originalScore / f.properties.population)
+          });
+        },
+        function(f, layer, e) {
+          return thisApp.mapTooltipView({
+            name: f.properties.Name,
+            label: 'Score per 1,000 residents',
+            value: mpFormatters.number(f.properties.originalScore / f.properties.population * 1000, 2)
+          });
+        }
+      ));
     },
 
-    // Change property to look at
-    changeProp: function() {
-      var thisApp = this;
-      var valuesDist, i, j;
+    // Make a color scale for mapping
+    makeColorScale: function(property) {
+      var propertyF;
 
-      // Stats
-      var values = _.sortBy(_.map(this.nData.features, function(f, fi) {
-        return f.properties[thisApp.showProp];
-      }));
-      var mean = ss.mean(values);
-      var stdDev = ss.standard_deviation(values);
-      var binCount = Math.ceil(Math.sqrt(values.length)) * 5;
-
-      // Color
-      var scale = chroma.scale('Blues').domain([0, 1, 2, 3], 7, 'e');
-
-      // Update map
-      this.nLayers.setStyle(function(feature, layer) {
-        return {
-          color: scale(Math.abs((feature.properties[thisApp.showProp] - mean) / stdDev)),
-          fillColor: scale(Math.abs((feature.properties[thisApp.showProp] - mean) / stdDev)),
-          fillOpacity: 0.8
+      if (!_.isFunction(property)) {
+        propertyF = function(f) {
+          return f.properties[property];
         };
-      });
-
-      // Make values chart
-      valuesDist = _.sortBy(_.map(this.nData.features, function(f, fi) {
-        return [f.properties.Name, f.properties[thisApp.showProp]];
-      }), function(v, vi) {
-        return v[1];
-      });
-      mpHighcharts.makeChart('#prop-values', $.extend(true, {}, mpHighcharts.columnOptions, {
-        legend: { enabled: false },
-        xAxis: {
-          type: 'category',
-          labels: { rotation: -45 }
-        },
-        series: [{
-          name: this.showProp,
-          data: valuesDist
-        }]
-      }));
-
-      // Make distribution chart
-      var bins = [];
-      var span = values[values.length - 1] - values[0];
-      var binSpan = (span / binCount);
-      var b;
-      for (i = 0; i < values[values.length - 1]; i += binSpan) {
-        b = 0;
-
-        for (j = 0; j < values.length - 1; j++) {
-          if (values[j] >= i && values[j] < i + binSpan) {
-            b++;
-          }
-        }
-
-        bins.push([i + ' - ' + (i + binSpan), b]);
+      }
+      else {
+        propertyF = property;
       }
 
-      mpHighcharts.makeChart('#prop-distribution', $.extend(true, {}, mpHighcharts.columnOptions, {
-        legend: { enabled: false },
-        xAxis: {
-          type: 'category',
-          labels: { rotation: -45 }
-        },
-        series: [{
-          name: this.showProp,
-          data: bins
-        }]
-      }));
+      var min = _.min(this.nData.features, propertyF);
+      min = propertyF(min);
 
+      var max = _.max(this.nData.features, propertyF);
+      max = propertyF(max);
 
-      // Stuff
-      var features = _.filter(_.sortBy(this.nData.features, function(f, fi) {
-        return f.properties[thisApp.showProp];
-      }), function(f, fi) {
-        return (_.isNumber(f.properties[thisApp.showProp]) &&
-          ['Mid - City Industrial', 'Humboldt Industrial Area', 'Camden Industrial'].indexOf(f.properties.Name) === -1);
-      });
-      values = _.map(features, function(f, fi) {
-        return f.properties[thisApp.showProp];
-      });
-      var northValues = _.map(_.filter(features, function(f, fi) {
-        return (['Near North', 'Camden'].indexOf(f.properties.community_area) !== -1);
-      }), function(f, fi) {
-        return f.properties[thisApp.showProp];
-      });
-      var nonNorthValues = _.map(_.filter(features, function(f, fi) {
-        return (['Near North', 'Camden'].indexOf(f.properties.community_area) === -1);
-      }), function(f, fi) {
-        return f.properties[thisApp.showProp];
-      });
-
-      console.log(northValues);
-      console.log('All Mean: ' + ss.mean(values));
-      console.log('All Median: ' + ss.mean(values));
-      console.log('All Std Dev: ' + ss.standard_deviation(values));
-      console.log('North Mean: ' + ss.mean(northValues));
-      console.log('North Median: ' + ss.mean(northValues));
-      console.log('North Std Dev: ' + ss.standard_deviation(northValues));
-      console.log('T Test of North to all mean: ' + ss.t_test(northValues, ss.mean(values)));
-      console.log('T Test of North and non-North: ' + ss.t_test_two_sample(northValues, nonNorthValues, 0));
-      console.log('T Test of North and all: ' + ss.t_test_two_sample(northValues, values, 0));
-
-      console.log('Manual T of North to all mean: ' + (
-        (ss.mean(northValues) - ss.mean(values)) /
-        (ss.standard_deviation(northValues) / Math.sqrt(northValues.length))
-      ));
-
-      console.log('Sig Stat of North to all mean: ' + (
-        (ss.mean(northValues) - ss.mean(values)) /
-        (ss.standard_deviation(northValues))
-      ));
-
-
-      console.log('T Test of all to North mean: ' + ss.t_test(values, ss.mean(northValues)));
-
-      console.log('Manual T Test: ' + (
-        (ss.mean(northValues) - ss.mean(values)) /
-        (Math.sqrt(
-          (ss.variance(northValues) / northValues.length) +
-          (ss.variance(values) / values.length)
-        ))
-      ));
-      console.log('Degrees of freedom for all and North: ' + (northValues.length + values.length - 2));
-
+      return chroma.scale(['white', 'green']).out('hex').mode('lch')
+        .domain([min, max], 5);
     },
+
+    // Make a neighborhood map
+    makeNeighborhoodMap: function(id, outliers, north, style, tooltip) {
+      var map = {};
+      var base;
+      var data = (outliers) ? this.nDataOutliers : this.nData;
+
+      // Make map
+      map.map = new L.Map(id, mpMaps.mapOptions);
+      base = new L.tileLayer('//{s}.tiles.mapbox.com/v3/' + mpMaps.mapboxStreetsLightLabels + '/{z}/{x}/{y}.png');
+      map.map.addLayer(base);
+      map.map.setView(mpMaps.minneapolisPoint, 8);
+      map.map.removeControl(map.map.attributionControl);
+
+      // Tool tip
+      map.tooltipControl = new mpMaps.TooltipControl();
+      map.map.addControl(map.tooltipControl);
+
+      // Add geojson layer
+      map.nLayer = L.geoJson(data, {
+        style: style,
+        onEachFeature: function(feature, layer) {
+          layer.on('mouseover', function(e) {
+            map.tooltipControl.update(tooltip(feature, layer, e));
+          });
+          layer.on('mouseout', function(e) {
+            map.tooltipControl.hide();
+          });
+        }
+      });
+      map.nLayer.addTo(map.map);
+
+      // Add north outline
+      if (north) {
+        L.geoJson(this.nNorth, {
+          style: {
+            fillColor: 'transparent',
+            fillOpacity: 0,
+            color: 'black',
+            strokeWidth: 2.5,
+            clickable: false
+          }
+        }).addTo(map.map);
+      }
+
+      // Geojson should have a callback, but it doesn't so we do this
+      _.delay(function() {
+        map.map.fitBounds(map.nLayer.getBounds());
+        map.map.invalidateSize();
+      }, 900);
+
+      return map;
+    },
+
+
 
 
     // Default options

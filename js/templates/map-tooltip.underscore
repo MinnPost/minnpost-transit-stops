@@ -1,0 +1,8 @@
+<div class="general-map-tooltip">
+  <strong><%= name %></strong>
+
+  <% if (typeof label != 'undefined' && label) { %>
+    <br />
+    <%= label %>: <%= value %>
+  <% } %>
+</div>
