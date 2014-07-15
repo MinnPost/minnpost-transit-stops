@@ -73,6 +73,74 @@
     </div>
 
 
+    <div class="row">
+      <div class="column-medium-50">
+        <p>Our final step is to run these numbers through some statistical analysis.  We want to compare the northern neighborhoods to the rest of the neighborhoods which means that <a href="http://en.wikipedia.org/wiki/ANOVA" target="_blank">ANOVA</a> (analysis of variance) is most appropriate.  ANOVA is a model that tells us if the average of the groups are the same, statistically speaking.</p>
+
+        <p>
+          All neighborhoods:  {{ formatters.number(meanAll * 1000, 2) }} score per 1,000 residents<br >
+          Northern neighborhoods: {{ formatters.number(meanNorth * 1000, 2) }}<br>
+          Non-Northern neighborhoods: {{ formatters.number(meanNonNorth * 1000, 2) }}
+        </p>
+
+        <p>We know that the averages are indeed different.  But given the all the values and how each neighborhood differs from the next, we need something more soffisticated to ask is this different really our of the norm given the city as a whole.</p>
+      </div>
+      <div class="column-medium-50">
+        <div class="xxlarge text-center">
+          .201 : Not significant
+        </div>
+
+        <p><br><br></p>
+        <p>This means that we can't say with certianty that the values are significantly different.</p>
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="column-medium-50">
+        <p>This analysis does not conclude that we shouldn't look deeper or that the northern neighborhoods don't need better stop quality, it simply means that by just looking at the numbers, we can't be certain that the northern neighborhoods have significantly lower stop quality.</p>
+      </div>
+      <div class="column-medium-50">
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="column-medium-50">
+        <p>And of course, our methodolgy may not be perfect; maybe there are things we can adjust that moer accurately describes how you view the situation.  For instance, adjust how our score is calculated or how we want to normalize each neighborhood.</p>
+
+        <p><em>Insert sliders and knobs here to play with anaylsis.</em></p>
+      </div>
+      <div class="column-medium-50">
+        <div class="xxlarge text-center">
+          Maybe significant
+        </div>
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="column-medium-50">
+        <p>Originally, the claims were that the northern neighborhoods did not have the same stop quality as the rest of the city, and our analysis above shows that its very difficult to be certain of this.  But, we can still look at other numbers to see if there are indeed neighborhoods that are lacking in stop quality.</p>
+
+        <p>The scatterplot to the right shows the score per capita against the percentage of the non-white population in each neighborhood.  We can see pretty easily that there is not really any correlation between these two variables.</p>
+      </div>
+      <div class="column-medium-50">
+        <div class="chart" id="chart-score-non-white"></div>
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="column-medium-50">
+        <p>We could also look at score per 1,000 residents against percenage employed.  Again, we don't see any real correlation.</p>
+      </div>
+      <div class="column-medium-50">
+        <div class="chart" id="chart-score-employed"></div>
+      </div>
+    </div>
+
+
   </div>
 
   <div class="footnote-container">

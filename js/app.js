@@ -49,7 +49,8 @@ define('minnpost-transit-stops', [
           heatWeight: 4,
           lightWeight: 3,
           benchWeight: 2,
-          signWeight: 1
+          signWeight: 1,
+          formatters: mpFormatters
         },
         partials: {
         }
@@ -74,6 +75,7 @@ define('minnpost-transit-stops', [
         }));
         thisApp.makeStats();
         thisApp.makeMaps();
+        thisApp.makeCharts();
       });
     },
 
@@ -81,6 +83,7 @@ define('minnpost-transit-stops', [
     makeStats: function() {
       var thisApp = this;
 
+      // Counts
       this.mainView.set('countShelter', _.reduce(this.nData.features, function(m, f, fi) {
         return m + f.properties.shelter;
       }, 0));
@@ -108,6 +111,58 @@ define('minnpost-transit-stops', [
         );
         return f;
       });
+
+      // Means
+      this.mainView.set('meanNorth', ss.mean(
+        _.map(_.filter(this.nData.features, function(f, fi) {
+          return (!!f.properties.north);
+        }), function(f, fi) {
+          return f.properties.originalScore / f.properties.population;
+        })
+      ));
+      this.mainView.set('meanNonNorth', ss.mean(
+        _.map(_.filter(this.nData.features, function(f, fi) {
+          return (!f.properties.north);
+        }), function(f, fi) {
+          return f.properties.originalScore / f.properties.population;
+        })
+      ));
+      this.mainView.set('meanAll', ss.mean(
+        _.map(this.nData.features, function(f, fi) {
+          return f.properties.originalScore / f.properties.population;
+        })
+      ));
+    },
+
+    // Make charts
+    makeCharts: function() {
+      var thisApp = this;
+      this.charts = {};
+
+      // Score by non-white scatterplot
+      this.charts.scoreNonWhite = mpHighcharts.makeChart('#chart-score-non-white',
+        $.extend(true, {}, mpHighcharts.scatterOptions, {
+          series: [{
+            name: 'Score by Non-white population',
+            data: _.map(this.nData.features, function(f, fi) {
+              return [f.properties.non_white_per, (f.properties.originalScore / f.properties.population * 1000)];
+            })
+          }]
+        })
+      );
+
+      // Score by per employed scatterplot
+      this.charts.scoreNonWhite = mpHighcharts.makeChart('#chart-score-employed',
+        $.extend(true, {}, mpHighcharts.scatterOptions, {
+          series: [{
+            name: 'Score by Employed population',
+            data: _.map(this.nData.features, function(f, fi) {
+              return [f.properties.employed_per, (f.properties.originalScore / f.properties.population * 1000)];
+            })
+          }]
+        })
+      );
+
     },
 
     // Make map
