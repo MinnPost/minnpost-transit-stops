@@ -88,6 +88,34 @@
       ],
       "returns": "L"
     },
+    "topojson": {
+      "rname": "topojson",
+      "js": [
+        "topojson/topojson"
+      ],
+      "returns": "topojson"
+    },
+    "chroma-js": {
+      "rname": "chroma",
+      "js": [
+        "chroma-js/chroma"
+      ],
+      "returns": "chroma"
+    },
+    "highcharts": {
+      "rname": "highcharts",
+      "js": [
+        "highcharts/highcharts"
+      ],
+      "returns": "Highcharts"
+    },
+    "simple-statistics": {
+      "rname": "simple-statistics",
+      "js": [
+        "simple-statistics/src/simple_statistics"
+      ],
+      "returns": "ss"
+    },
     "minnpost-styles": {
       "rname": "mpStyles",
       "css": [
@@ -118,6 +146,13 @@
         "minnpost-styles/dist/minnpost-styles.maps"
       ],
       "returns": "mpMaps"
+    },
+    "mpHighcharts": {
+      "rname": "mpHighcharts",
+      "js": [
+        "minnpost-styles/dist/minnpost-highcharts.maps"
+      ],
+      "returns": "mpHighcharts"
     }
   }
 }

@@ -1,0 +1,22 @@
+/**
+ * Styles for: minnpost-transit-stops
+ */
+/**
+ * Mixins for: minnpost-transit-stops
+ */
+/**
+ * Main styles for: minnpost-transit-stops
+ */
+body .node-unpublished {
+  background-repeat: no-repeat;
+}
+
+.mp .minnpost-transit-stops-container .application-container {
+  padding-top: 1em;
+}
+.mp .minnpost-transit-stops-container .row {
+  margin-bottom: 5em;
+}
+.mp .minnpost-transit-stops-container .map {
+  height: 30em;
+}
