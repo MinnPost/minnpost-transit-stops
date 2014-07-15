@@ -141,24 +141,11 @@ mplsN.features = _.map(mplsN.features, function(f, fi) {
 
   // Make overall stop scores
   p.score = (
-    (p.s_count * 0.25) +
     (p.sign * 1) +
     (p.bench * 2) +
     (p.light * 3) +
     (p.heat * 4) +
     (p.shelter * 5)
-  );
-  p.score_no_count = (
-    (p.bench * 2) +
-    (p.light * 3) +
-    (p.heat * 4) +
-    (p.shelter * 5)
-  );
-  p.score_heavy = (
-    (p.bench * 5) +
-    (p.light * 10) +
-    (p.heat * 20) +
-    (p.shelter * 50)
   );
 
   // Remove stops from data
@@ -185,6 +172,8 @@ mplsN.features = _.map(mplsN.features, function(f, fi) {
 
   // Adjust for demographics
   p.score_by_pop = p.score / p.population;
+
+  /*
   p.score_by_emp = p.score / p.employed;
   p.score_by_jobs = p.score / p.jobs;
 
@@ -206,6 +195,7 @@ mplsN.features = _.map(mplsN.features, function(f, fi) {
   p.shelter_by_pop_area = p.shelter / p.population / p.area_km;
   p.light_by_pop_area = p.light / p.population / p.area_km;
   p.heat_by_pop_area = p.heat / p.population / p.area_km;
+  */
 
   return f;
 });
