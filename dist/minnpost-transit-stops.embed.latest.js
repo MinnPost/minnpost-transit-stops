@@ -38954,7 +38954,7 @@ define('minnpost-transit-stops', [
     getData: function() {
       var thisApp = this;
 
-      $.getJSON('data/neighborhood-stop-data.topo.json', function(data) {
+      helpers.getLocalData('neighborhood-stop-data.topo.json', this.options).done(function(data) {
         thisApp.nDataOutliers = topojson.feature(data, data.objects['neighborhood-stop-data.geo']);
         thisApp.nData = _.clone(thisApp.nDataOutliers);
         thisApp.nData.features = _.filter(thisApp.nData.features, function(f, fi) {
@@ -39238,11 +39238,10 @@ define('minnpost-transit-stops', [
     // Default options
     defaultOptions: {
       projectName: 'minnpost-transit-stops',
-      remoteProxy: null,
+      remoteProxy: '//mp-jsonproxy.herokuapp.com/proxy?callback=?&url=',
       el: '.minnpost-transit-stops-container',
       availablePaths: {
         local: {
-
           css: ['.tmp/css/main.css'],
           images: 'images/',
           data: 'data/'
@@ -39263,15 +39262,15 @@ define('minnpost-transit-stops', [
         deploy: {
           css: [
             '//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css',
-            'https://s3.amazonaws.com/data.minnpost/projects/minnpost-transit-stops/minnpost-transit-stops.libs.min.css',
-            'https://s3.amazonaws.com/data.minnpost/projects/minnpost-transit-stops/minnpost-transit-stops.latest.min.css'
+            '//s3.amazonaws.com/data.minnpost/projects/minnpost-transit-stops/minnpost-transit-stops.libs.min.css',
+            '//s3.amazonaws.com/data.minnpost/projects/minnpost-transit-stops/minnpost-transit-stops.latest.min.css'
           ],
           ie: [
-            'https://s3.amazonaws.com/data.minnpost/projects/minnpost-transit-stops/minnpost-transit-stops.libs.min.ie.css',
-            'https://s3.amazonaws.com/data.minnpost/projects/minnpost-transit-stops/minnpost-transit-stops.latest.min.ie.css'
+            '//s3.amazonaws.com/data.minnpost/projects/minnpost-transit-stops/minnpost-transit-stops.libs.min.ie.css',
+            '//s3.amazonaws.com/data.minnpost/projects/minnpost-transit-stops/minnpost-transit-stops.latest.min.ie.css'
           ],
-          images: 'https://s3.amazonaws.com/data.minnpost/projects/minnpost-transit-stops/images/',
-          data: 'https://s3.amazonaws.com/data.minnpost/projects/minnpost-transit-stops/data/'
+          images: '//s3.amazonaws.com/data.minnpost/projects/minnpost-transit-stops/images/',
+          data: '//s3.amazonaws.com/data.minnpost/projects/minnpost-transit-stops/data/'
         }
       }
     },
