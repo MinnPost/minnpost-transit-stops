@@ -137,7 +137,45 @@ define('minnpost-transit-stops', [
     // Make charts
     makeCharts: function() {
       var thisApp = this;
+      var dataNorth, dataNonNorth;
       this.charts = {};
+
+      // Score per pop histogram
+      dataNorth = [];
+      dataNonNorth = [];
+      _.each(this.nData.features, function(f, fi) {
+        var bin = f.properties.originalScore / f.properties.population * 1000;
+        var data = (f.properties.north) ? dataNorth : dataNonNorth;
+        bin = Math.round(bin / 3) * 3;
+        data[bin] = data[bin] || [0, 0];
+        data[bin][0] = bin;
+        data[bin][1] = data[bin][1] + 1;
+      });
+      dataNorth = _.values(dataNorth);
+      dataNonNorth = _.values(dataNonNorth);
+      this.charts.scoreHistogram = mpHighcharts.makeChart('#chart-score-pop-histogram',
+        $.extend(true, {}, mpHighcharts.columnOptions, {
+
+          plotOptions: {
+            column: {
+              stacking: 'normal',
+              shadow: false,
+              borderWidth: 0.5,
+              borderColor: '#666',
+              pointPadding: 0,
+              groupPadding: 0
+            }
+          },
+          series: [{
+            name: 'North',
+            data: dataNorth
+          },
+          {
+            name: 'Non-north',
+            data: dataNonNorth
+          }]
+        })
+      );
 
       // Score by non-white scatterplot
       this.charts.scoreNonWhite = mpHighcharts.makeChart('#chart-score-non-white',
@@ -163,6 +201,17 @@ define('minnpost-transit-stops', [
         })
       );
 
+      // Score by per employed scatterplot
+      this.charts.scoreNonWhite = mpHighcharts.makeChart('#chart-score-ons',
+        $.extend(true, {}, mpHighcharts.scatterOptions, {
+          series: [{
+            name: 'Score by Ons',
+            data: _.map(this.nData.features, function(f, fi) {
+              return [f.properties.ons, f.properties.originalScore];
+            })
+          }]
+        })
+      );
     },
 
     // Make map

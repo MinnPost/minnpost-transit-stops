@@ -75,15 +75,33 @@
 
     <div class="row">
       <div class="column-medium-50">
-        <p>Our final step is to run these numbers through some statistical analysis.  We want to compare the northern neighborhoods to the rest of the neighborhoods which means that <a href="http://en.wikipedia.org/wiki/ANOVA" target="_blank">ANOVA</a> (analysis of variance) is most appropriate.  ANOVA is a model that tells us if the average of the groups are the same, statistically speaking.</p>
-
-        <p>
-          All neighborhoods:  {{ formatters.number(meanAll * 1000, 2) }} score per 1,000 residents<br >
-          Northern neighborhoods: {{ formatters.number(meanNorth * 1000, 2) }}<br>
-          Non-Northern neighborhoods: {{ formatters.number(meanNonNorth * 1000, 2) }}
+        <p>The first thing we can look at is the average score per population.  It is clear that the northern neighborhoods do have a lower value here.</p>
+      </div>
+      <div class="column-medium-50">
+        <p class="large">
+          All neighborhoods: <strong>{{ formatters.number(meanAll * 1000, 2) }}</strong> score per 1,000 residents<br >
+          Northern neighborhoods: <strong>{{ formatters.number(meanNorth * 1000, 2) }}</strong><br>
+          Non-Northern neighborhoods: <strong>{{ formatters.number(meanNonNorth * 1000, 2) }}</strong>
         </p>
+      </div>
+    </div>
 
-        <p>We know that the averages are indeed different.  But given the all the values and how each neighborhood differs from the next, we need something more soffisticated to ask is this different really our of the norm given the city as a whole.</p>
+
+    <div class="row">
+      <div class="column-medium-50">
+        <p>At it's face value, the difference in average stop quality per population could be enough to say that the northern neighborhoods really are being left behind.  But what if we look at how the neighborhoods vary in scores per population via a graph called a histogram.  We can see that though the northern neighborhoods don't have the extremely high values, there is a fair amount of variance across both groups.</p>
+      </div>
+      <div class="column-medium-50">
+        <div class="chart" id="chart-score-pop-histogram"></div>
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="column-medium-50">
+        <p>So, how do we take this variance into account?  This is where statistical methods can help.  After talking with experts, We found that the best way to compare the northern neighborhoods to the rest of the neighborhoods is to use the <a href="http://en.wikipedia.org/wiki/ANOVA" target="_blank">ANOVA</a> (analysis of variance).  ANOVA is a model that tells us if the average of the groups are the same, statistically speaking.</p>
+
+        <p>After running the data through ANOVA, we come up with a 0.201 significance level which is not enough for us to be confident that these averages can be explained outside of chance (normal variance).  For reference we would need a 0.05 significance level or less.</p>
       </div>
       <div class="column-medium-50">
         <div class="xxlarge text-center">
@@ -98,7 +116,7 @@
 
     <div class="row">
       <div class="column-medium-50">
-        <p>This analysis does not conclude that we shouldn't look deeper or that the northern neighborhoods don't need better stop quality, it simply means that by just looking at the numbers, we can't be certain that the northern neighborhoods have significantly lower stop quality.</p>
+        <p>This analysis does not conclude that we shouldn't look deeper or that the northern neighborhoods don't need better stop quality, it simply means that by just looking at the numbers, we can't be certain that the northern neighborhoods have significantly lower stop quality <em>this needs better/more-accurate wording</em>.</p>
       </div>
       <div class="column-medium-50">
       </div>
@@ -137,6 +155,18 @@
       </div>
       <div class="column-medium-50">
         <div class="chart" id="chart-score-employed"></div>
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="column-medium-50">
+        <p>What if we look at weekly average number of people that get on transit vehicles from each stop versus stop quality?  We should see correlation here since MetroTransit's policy is to add shelters based on ridership.</p>
+
+        <p><em>Add regression analysis/line</em></p>
+      </div>
+      <div class="column-medium-50">
+        <div class="chart" id="chart-score-ons"></div>
       </div>
     </div>
 
