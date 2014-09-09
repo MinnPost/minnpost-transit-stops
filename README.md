@@ -1,6 +1,6 @@
 # Minnpost Transit Stops
 
-Analysis of transit stops in the Twin Cities.
+Analysis of transit stops in the Twin Cities.  *This piece has been put on hold indefinitely.*
 
 You can see this project in action at *[published story link goes here]()*.
 
