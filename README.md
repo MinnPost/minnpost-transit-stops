@@ -44,10 +44,7 @@ Get the code for this project and install the necessary dependency libraries and
 1. Go into the template directory: `cd minnpost-transit-stops`
 1. Install NodeJS packages: `npm install`
 1. Install Bower components: `bower install`
-
-
 1. Because Leaflet comes unbuilt, we need to build it: `cd bower_components/leaflet/ && npm install && jake; cd -;`
-
 
 ### Data processing
 
